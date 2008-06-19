@@ -1,0 +1,13 @@
+2006-09-13  Kevin A. Archie  <karchie@npg.wustl.edu>
+
+	* dcm.c: added STATIC (conditional static) for unit testing
+
+	* dcm.c: added warning message for unsupported transfer syntaxes
+
+2006-09-01  Kevin A. Archie  <karchie@npg.wustl.edu>
+
+	* test_dcm_to_4dfp.c: added unit tests
+
+2006-08-29  Kevin Archie  <karchie@npg.wustl.edu>
+
+	* Set up GNU autotools build support.
