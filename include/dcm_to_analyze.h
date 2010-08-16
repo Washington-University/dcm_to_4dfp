@@ -57,6 +57,9 @@ typedef struct {
   
   char  sliceSpacing[DICOM_DS_LENGTH + 1];
   
+  float  rescaleIntercept;
+  float  rescaleSlope;
+
 } PARAMS;
 
 void* extractPixels(DCM_OBJECT** obj, PARAMS *p);

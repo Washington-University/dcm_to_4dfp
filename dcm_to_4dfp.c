@@ -23,7 +23,7 @@
 **   checkOrientation method and adapted for porting to Sparc on x86
 */
 
-static char rcsid[] = "$Id: dcm_to_4dfp.c,v 1.9 2006/11/09 17:18:45 karchie Exp $";
+static char rcsid[] = "$Id$";
 static char program[] = "dcm_to_4dfp";
 
 
@@ -109,6 +109,7 @@ printf("\t[-f]	    Directories will be created, and dicom files will be moved. \
 printf("\t[-g]	    Add image name, XYZ relative position, and number to rec file.\n\n");
 
 printf("\t[-q]       Slice Spacing: Do not compute by Image Position.\n");
+printf("\t[-r]       Rescale: Use the rescale slope and intercept fields.\n");
 printf("\t[-t <flt>] Slice Spacing: Use input value.[-t <flt>]\n");
 printf("\t[-t T]     Slice Spacing: Use Slice Thickness 0018 0050.[-t T]\n");
 printf("\t[-t S]     Slice Spacing: Use Slice Spacing 0018 0088 [-t S](** Default)\n");
@@ -135,6 +136,7 @@ parseParams(DCM_OBJECT** obj, const char* sliceThickness, PARAMS* p) {
   char imageOrientation[DICOM_DS_LENGTH*6 + 20];
   char series_num_txt[DICOM_IS_LENGTH+1];
   char txt[DICOM_IS_LENGTH+1];
+  char slope[DICOM_DS_LENGTH+1], intercept[DICOM_DS_LENGTH+1];
 
    /* tag  representation "descrip" mult length d->NULL */
   DCM_ELEMENT e[] = {
@@ -184,6 +186,10 @@ parseParams(DCM_OBJECT** obj, const char* sliceThickness, PARAMS* p) {
     { DCM_IDMODALITY, DCM_DS, "", 1, sizeof(p->idModality), NULL}};		/* 0008 0060 */
   DCM_ELEMENT e14[] = {
     { DCM_IDINSTITUTIONNAME, DCM_DS, "", 1, sizeof(p->idInstitution), NULL}};	/* 0008 0080 */
+  DCM_ELEMENT e15[] = {
+    { DCM_IMGRESCALEINTERCEPT, DCM_DS, "", 1, sizeof(intercept), NULL}};	/* 0008 0080 */
+  DCM_ELEMENT e16[] = {
+    { DCM_IMGRESCALESLOPE, DCM_DS, "", 1, sizeof(slope), NULL}};	/* 0008 0080 */
 
 
 
@@ -222,6 +228,8 @@ parseParams(DCM_OBJECT** obj, const char* sliceThickness, PARAMS* p) {
   e12[0].d.string =  p->idModel;		/*  DCM_IDMANUFACTURERMODEL */
   e13[0].d.string =  p->idModality;		/*  DCM_IDMODALITY	    */
   e14[0].d.string =  p->idInstitution;		/*  DCM_IDINSTITUTIONNAME   */
+  e15[0].d.string =  intercept;		/*  DCM_IMGRESCALEINTERCEPT   */
+  e16[0].d.string =  slope;		/*  DCM_IMGRESCALESLOPE   */
 
   cond = DCM_ParseObject(obj, e, (int)DIM_OF(e), NULL, 0, NULL);
   if (cond != DCM_NORMAL) {
@@ -325,10 +333,25 @@ parseParams(DCM_OBJECT** obj, const char* sliceThickness, PARAMS* p) {
   if (cond != DCM_NORMAL) {
     (void)COND_PopCondition(TRUE);
   }
+  cond = DCM_ParseObject(obj, e15, (int)DIM_OF(e15), NULL, 0, NULL);
+  if (cond != DCM_NORMAL) {
+    (void)COND_PopCondition(TRUE);
+  }
+  cond = DCM_ParseObject(obj, e16, (int)DIM_OF(e16), NULL, 0, NULL);
+  if (cond != DCM_NORMAL) {
+    (void)COND_PopCondition(TRUE);
+  }
 
   p->instanceNumber = atoi(txt); /* REL image number 0020 0013 used to order images */
   p->seriesNumber = atoi(series_num_txt); /*  REL series number 0020 0011 */
 
+  p->rescaleIntercept = atof(intercept);
+  p->rescaleSlope = atof(slope);
+  if (p->rescaleSlope == 0.0f)
+  {
+	p->rescaleSlope = 1.0f;
+  }
+  
   return 0;
 }
 
@@ -903,7 +926,7 @@ static void orderXYZSlices(LST_HEAD** l, CTNBOOLEAN xDirection,
 
 }
 /*****************************************************************************/
-static void writeImg(const char* base, LST_HEAD** l, char control, float* minVal, float* maxVal)
+static void writeImg(const char* base, LST_HEAD** l, char control, float* minVal, float* maxVal, CTNBOOLEAN useRescale)
 {
   CONDITION cond;
   FILE *fd;
@@ -921,7 +944,7 @@ static void writeImg(const char* base, LST_HEAD** l, char control, float* minVal
   
   printf("Writing %s\n",fileName);
   p = LST_Head(l);
-  *minVal= 65536; *maxVal = -65536;
+  *minVal = 65535; *maxVal = -65536;
 
   (void)LST_Position(l, p);
   while (p != NULL) {
@@ -949,13 +972,27 @@ static void writeImg(const char* base, LST_HEAD** l, char control, float* minVal
      fpixels = extractPixels(&obj, p);
      
      p1 = fpixels; cnt=pixelCount;
-     while(cnt-- > 0) {
-	if (*p1 > *maxVal)
-	     *maxVal = *p1;
-	if (*p1 < *minVal)
-	  *minVal = *p1;
-        p1++;
-      }
+	 if (useRescale == TRUE && (p->rescaleSlope != 1.0f || p->rescaleIntercept != 0.0f))
+	 {
+		if (cnt) *minVal = *maxVal = p1[0] * p->rescaleSlope + p->rescaleIntercept;//dont segfault if no image data
+		while(cnt-- > 0) {
+			*p1 = *p1  * p->rescaleSlope + p->rescaleIntercept;//rescale
+			if (*p1 > *maxVal)
+				*maxVal = *p1;
+			if (*p1 < *minVal)
+				*minVal = *p1;
+			p1++;
+		}
+	 } else {
+		if (cnt) *minVal = *maxVal = p1[0];//dont segfault if no image data
+		while(cnt-- > 0) {
+			if (*p1 > *maxVal)
+				*maxVal = *p1;
+			if (*p1 < *minVal)
+				*minVal = *p1;
+			p1++;
+		}
+	 }
 
      if (verbose)printf("4dfp write p->fileName= %s\n",p->fileName);
      if (ewrite (fpixels,pixelCount,control,fd)) errw(program,fileName);
@@ -1455,7 +1492,8 @@ static void
 processOneView(LST_HEAD** l, DCM_TAG tag, const char *text, char* base, int app,
 	       CTNBOOLEAN sortOnInstanceNumber, int counter, CTNBOOLEAN xDirect,
 	       CTNBOOLEAN yDirect, CTNBOOLEAN zDirect, char* spacingFlag,
-	       CTNBOOLEAN computeSliceSpacing, int argc, char **argv, char control)
+	       CTNBOOLEAN computeSliceSpacing, CTNBOOLEAN useRescale,
+		   int argc, char **argv, char control)
 
 {
   LST_HEAD*	localCopy;
@@ -1515,7 +1553,7 @@ processOneView(LST_HEAD** l, DCM_TAG tag, const char *text, char* base, int app,
       if (computeSliceSpacing)
           setSliceThickness(&localCopy);		/* Force computation of sliceThickness -q */
 
-      writeImg(newbase, &localCopy, control, &minVal, &maxVal);
+      writeImg(newbase, &localCopy, control, &minVal, &maxVal, useRescale);
       /* Now write the ifh and rec files */
       if(verbose)printf("Ready to ifh and rec files in processOneView\n");
       writeIFH(newbase, &localCopy, control);
@@ -1540,6 +1578,7 @@ static void
 processMultipleViews(LST_HEAD** l, DCM_TAG tag, CTNBOOLEAN sortOnInstanceNumber,
 		     CTNBOOLEAN xDirection, CTNBOOLEAN yDirection,
 		     CTNBOOLEAN zDirection, CTNBOOLEAN computeSliceSpacing,
+			 CTNBOOLEAN useRescale,
 		     char* base, char* spacingFlag, int argc, char **argv, char control)
 {
   LST_HEAD* 	  vList = 0;
@@ -1566,8 +1605,8 @@ processMultipleViews(LST_HEAD** l, DCM_TAG tag, CTNBOOLEAN sortOnInstanceNumber,
     processOneView(l, tag, item->text, base, append,
 		   sortOnInstanceNumber, fileCounter,
 	           xDirection, yDirection, zDirection,
-	           spacingFlag,
-	           computeSliceSpacing, argc, argv, control);
+	           spacingFlag, computeSliceSpacing,
+			   useRescale, argc, argv, control);
 
     item = LST_Next(&vList);
     fileCounter++;
@@ -1615,7 +1654,7 @@ MAIN(int argc, char **argv)
     CTNBOOLEAN computeSliceSpacing = 	FALSE;
     CTNBOOLEAN computeSliceSpace = 	TRUE;
     CTNBOOLEAN sortOnInstanceNumber = 	TRUE;
-
+	CTNBOOLEAN useRescaleFields = 		FALSE;
 
     char 	**argvf=		argv;
     int		argcf=			argc;
@@ -1639,72 +1678,75 @@ MAIN(int argc, char **argv)
 
         if(verbose)printf("argc = %d argv = %s\n",argc, *argv);
 
-	switch ((*argv)[1]) {
+		switch ((*argv)[1]) {
 
-	case 'b': /* Output base filename follows the -b. The default is - analyze -  */
-	    argc--; argv++;
-	    base = *argv;
-	    break;
-	case 'c': /* Slice Spacing: Compute using Image Position (0020 0032). (override all other choices) */
-	    computeSliceSpacing = TRUE;
-	    break;
-	case 'd': /* Separate volumes by the header tag given by the group and element number. */
-	    if (argc < 2)
-		usageerror();
-	    argc--; argv++;
-	    sscanf(*argv, "%x", &group);
-	    argc--; argv++;
-	    sscanf(*argv, "%x", &element);
-	    divisionTag = DCM_MAKETAG(group,element);
-	    break;
-	case 'f': /* Directories will be created, and dicom files will be moved. */
-	    useFolder = TRUE;
-	    break;
-	case 'g': /* Add image name, XYZ relative position, and number to rec file */
-	    outputFileName = TRUE;
-	    break;
-	case 'n': /* Default is 4dfp Analyze orientation */
-	    /*floatFlag = FALSE;*/ /* Switch to integer pixels 4dint Analyze orientation */
-	    printf("Integer Pixels not available\n");
-	    break;
-	case 'q': /* Slice Spacing: Do not Compute. ** default */
-	    computeSliceSpace = FALSE;
-	    break;
-	case 't': /* Slice Spacing: Use number or 'S' or 'T' [-t <flt> S T ] */
-	          /* 'S' : Use Slice Spacing 0018 0088 (the default if it exists) */
-	          /* 'T' : Use Slice Thickness 0018 0050 if it exists*/
+		case 'b': /* Output base filename follows the -b. The default is - analyze -  */
+			argc--; argv++;
+			base = *argv;
+			break;
+		case 'c': /* Slice Spacing: Compute using Image Position (0020 0032). (override all other choices) */
+			computeSliceSpacing = TRUE;
+			break;
+		case 'd': /* Separate volumes by the header tag given by the group and element number. */
+			if (argc < 2)
+			usageerror();
+			argc--; argv++;
+			sscanf(*argv, "%x", &group);
+			argc--; argv++;
+			sscanf(*argv, "%x", &element);
+			divisionTag = DCM_MAKETAG(group,element);
+			break;
+		case 'f': /* Directories will be created, and dicom files will be moved. */
+			useFolder = TRUE;
+			break;
+		case 'g': /* Add image name, XYZ relative position, and number to rec file */
+			outputFileName = TRUE;
+			break;
+		case 'n': /* Default is 4dfp Analyze orientation */
+			/*floatFlag = FALSE;*/ /* Switch to integer pixels 4dint Analyze orientation */
+			printf("Integer Pixels not available\n");
+			break;
+		case 'q': /* Slice Spacing: Do not Compute. ** default */
+			computeSliceSpace = FALSE;
+			break;
+		case 'r':
+			useRescaleFields = TRUE;
+			break;
+		case 't': /* Slice Spacing: Use number or 'S' or 'T' [-t <flt> S T ] */
+				  /* 'S' : Use Slice Spacing 0018 0088 (the default if it exists) */
+				  /* 'T' : Use Slice Thickness 0018 0050 if it exists*/
 
-	    argc--; argv++; sliceThickness = *argv; spacingFlag = "I";
+			argc--; argv++; sliceThickness = *argv; spacingFlag = "I";
 
-	    if(strcmp(sliceThickness,"T")==0){spacingFlag = "T"; *sliceThickness = '\0';}
-	    if(strcmp(sliceThickness,"S")==0){spacingFlag = "S"; *sliceThickness = '\0';}
+			if(strcmp(sliceThickness,"T")==0){spacingFlag = "T"; *sliceThickness = '\0';}
+			if(strcmp(sliceThickness,"S")==0){spacingFlag = "S"; *sliceThickness = '\0';}
 
-	    break;
-	case 'u': /* Output files named using sequence (0018 0024). Rel series num appended. */
-	    useSeqFileName = TRUE;
-	    break;
-	case 'v': /* verbose  */
-	    verbose = TRUE;
-	    break;
-	case 'X': /* Sagittal: image positions will be ordered low to high */
-	    printf ("Sagittal- force low to high X order image positions\n");
-	    xDirection = TRUE;
-	    break;
-	case 'Y': /* Coronal:	image positions will be high to low */
-	    printf ("Coronal- force high to low Y order image positions\n");
-	    yDirection = TRUE;
-	    break;
-	case 'Z': /* Transverse: image positions will be high to low */
-	    printf ("Transverse- force high to low Z order image positions\n");
-	    zDirection = TRUE;
-	    break;
-	case '@':
-	    argc--; argv++;
-            control = *argv[0];
-            break;
-	default:
-	    break;
-	}
+			break;
+		case 'u': /* Output files named using sequence (0018 0024). Rel series num appended. */
+			useSeqFileName = TRUE;
+			break;
+		case 'v': /* verbose  */
+			verbose = TRUE;
+			break;
+		case 'X': /* Sagittal: image positions will be ordered low to high */
+			printf ("Sagittal- force low to high X order image positions\n");
+			xDirection = TRUE;
+			break;
+		case 'Y': /* Coronal:	image positions will be high to low */
+			printf ("Coronal- force high to low Y order image positions\n");
+			yDirection = TRUE;
+			break;
+		case 'Z': /* Transverse: image positions will be high to low */
+			printf ("Transverse- force high to low Z order image positions\n");
+			zDirection = TRUE;
+			break;
+		case '@':
+			argc--; argv++;
+				control = *argv[0];
+				break;
+		default:
+			break;
+		}
     }
 
 /****************************/
@@ -1738,8 +1780,8 @@ MAIN(int argc, char **argv)
 
     processMultipleViews(&l, divisionTag, sortOnInstanceNumber,
 			   xDirection, yDirection, zDirection,
-			   computeSliceSpacing, base, spacingFlag,
-			    argcf, argvf, control);
+			   computeSliceSpacing, useRescaleFields, base,
+			   spacingFlag, argcf, argvf, control);
 
     while ((p = LST_Dequeue(&l)) != NULL)
       free(p);
