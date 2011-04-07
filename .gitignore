@@ -1,0 +1,29 @@
+# Compilation products
+*.o
+dcm_to_4dfp
+test_dcm
+test_dcm_to_4dfp
+
+# Emacs backup files
+*~
+
+# autotools output
+.deps
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache
+configure
+config.h
+config.h.in
+config.log
+config.status
+depcomp
+include/Makefile
+include/Makefile.in
+install-sh
+missing
+stamp-h1
+
+# etags output
+TAGS
