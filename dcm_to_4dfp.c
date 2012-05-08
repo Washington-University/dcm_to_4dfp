@@ -1,5 +1,5 @@
 /*
-          Copyright (C) 1998 Washington University
+          Copyright (C) 1998-2012 Washington University
 
 */
 /* Copyright marker.  Copyright will be inserted above.  Do not remove */
@@ -13,9 +13,8 @@
 ** Intent:		A set of DICOM images are placed in
 **			analyze volume(s) (Analyze 7.5 hdr + img files)
 **
-** Revision:		$Revision: 1.9 $
-** Status:		$State: Exp $
 */
+
 /******************************************************************************/
 
 /* 04-27-2006 Modified by Mohana Ramaratnam 
@@ -23,7 +22,7 @@
 **   checkOrientation method and adapted for porting to Sparc on x86
 */
 
-static char rcsid[] = "$Id$";
+static char gitid[] = "$Id$";
 static char program[] = "dcm_to_4dfp";
 
 
@@ -89,7 +88,7 @@ static void
 usageerror()
 {
 
-printf ("%s\n", rcsid);
+printf ("%s\n", gitid);
 printf ("Usage:\tdcm_to_4dfp [-b base] [-d gggg eeee] [-f] [-g] [-u] file(s)\n");
 printf ("Slice Spacing Options: [-c] [-t <flt> or S or T]\n");
 printf ("Slice Position Options: [-X] [-Y] [-Z]\n");
@@ -1193,7 +1192,7 @@ writeREC(const char *base, LST_HEAD** l, const char* text,
 
   sprintf(fileName, "%s.%s.img", base, extension_4dfp);
   printf("Writing %s.rec\n",fileName);
-  startrecle (fileName, argc, argv, rcsid, control);
+  startrecle (fileName, argc, argv, gitid, control);
   printrec (((CPU_is_bigendian ()) ? !(control == 'l' || control == 'L') : (control == 'b' || control == 'B')) ? "bigendian\n" : "littleendian\n");
 
   p = LST_Head(l);
@@ -1670,7 +1669,7 @@ MAIN(int argc, char **argv)
     char* 	lowerRange = 		0;
     char* 	upperRange = 		0;
     char* 	spacingFlag = 		"0";
-    DCM_TAG 	divisionTag = DCM_MAKETAG(0x0008,0x0031); /* Default is ID Series Time */
+    DCM_TAG 	divisionTag = DCM_MAKETAG(0x0020,0x000e); /* Default is Series Instance UID */
     char        control =               'O';
 
 
