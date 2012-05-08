@@ -1,7 +1,7 @@
 /*
- * $Id: test_dcm.c,v 1.1 2006/09/14 16:23:05 karchie Exp $
+ * $Id$
  * CUnit unit tests for dcm.c
- * by Kevin A. Archie, karchie@npg.wustl.edu
+ * by Kevin A. Archie, karchie@wustl.edu
  */
 
 #include <stdio.h>

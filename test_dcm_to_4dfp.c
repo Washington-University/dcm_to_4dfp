@@ -1,7 +1,7 @@
 /*
- * $Id: test_dcm_to_4dfp.c,v 1.5 2006/11/09 17:19:38 karchie Exp $
+ * $Id$
  * CUnit unit tests for dcm_to_4dfp.c
- * by Kevin A. Archie, karchie@npg.wustl.edu
+ * by Kevin A. Archie, karchie@wustl.edu
  */
 
 #include <stdio.h>
