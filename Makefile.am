@@ -10,6 +10,9 @@ dcm_to_4dfp_SOURCES = dcm_to_4dfp.c config.h \
 
 dcm_to_4dfp_LDADD = @TRX@/rec.o @TRX@/Getifh.o @TRX@/endianio.o
 
+dist-hook:
+	sh $(top_srcdir)/generate-changelog.sh $(top_srcdir) $(distdir)
+
 
 TESTS = test_dcm_to_4dfp test_dcm
 check_PROGRAMS = test_dcm_to_4dfp test_dcm

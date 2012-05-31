@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(dcm_to_4dfp, 1.0, karchie@npg.wustl.edu)
+AC_INIT(dcm_to_4dfp, 1.0.1, karchie@wustl.edu)
 AC_CONFIG_SRCDIR([dcm_to_4dfp.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -11,6 +11,7 @@ AM_INIT_AUTOMAKE
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
+AM_PROG_CC_C_O
 
 # Checks for libraries.
 AC_ARG_WITH([TRX], [AS_HELP_STRING([--with-TRX],
