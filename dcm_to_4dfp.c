@@ -1,5 +1,5 @@
 /*
-          Copyright (C) 1998-2012 Washington University
+          Copyright (C) 1998-2013 Washington University
 
 */
 /* Copyright marker.  Copyright will be inserted above.  Do not remove */
@@ -131,8 +131,8 @@ exit (1);
 /****************************************************************************/
 STATIC CONDITION
 parseParams(DCM_OBJECT** obj, const char* sliceThickness, PARAMS* p) {
-  char imagePosition[DICOM_DS_LENGTH*3 + 10];
-  char imageOrientation[DICOM_DS_LENGTH*6 + 20];
+  char imagePosition[DICOM_DS_LENGTH*3 + 32];
+  char imageOrientation[DICOM_DS_LENGTH*6 + 32];
   char series_num_txt[DICOM_IS_LENGTH+1];
   char txt[DICOM_IS_LENGTH+1];
   char slope[DICOM_DS_LENGTH+1], intercept[DICOM_DS_LENGTH+1];
@@ -450,7 +450,7 @@ readParamsForOneImage(const char* fileName,
     options |= DCM_PART10FILE;
     options |= DCM_ACCEPTVRMISMATCH;
 
-    if (verbose)printf("readParamsForOneImage options = %x\n",options);
+    if (verbose)printf("readParamsForOneImage options = %lx\n",options);
 
     cond = DCM_OpenFile(fileName, options, &obj);
 
@@ -578,13 +578,13 @@ static void readImageParams(int argc, char** argv,
       }
       options = DCM_ORDERLITTLEENDIAN;			/* 0x02 */
       options &= ~DCM_FILEFORMATMASK;			/* 0x80 */
-         if (verbose)printf("options = %x\n",options);	/* 0 */
+         if (verbose)printf("options = %lx\n",options);	/* 0 */
 
       options |= DCM_PART10FILE;			/* 0x80 */
-         if (verbose)printf("options = %x\n",options);	/* 80 */
+         if (verbose)printf("options = %lx\n",options);	/* 80 */
 
       options |= DCM_ACCEPTVRMISMATCH;			/* 0x4000 */
-         if (verbose)printf("options = %x\n",options);	/* 4080 */
+         if (verbose)printf("options = %lx\n",options);	/* 4080 */
          if (verbose)printf("NOW DCM_OpenFile *argv, options, &obj\n",options);
 
       cond = DCM_OpenFile(*argv, options, &obj);
@@ -956,7 +956,7 @@ static void writeImg(const char* base, LST_HEAD** l, char control, float* minVal
      }
 
      if (verbose){
-       printf("writeImg options = %x\n",options);
+       printf("writeImg options = %lx\n",options);
        printf(" %s\n", p->fileName);
      }
 
@@ -1339,7 +1339,7 @@ fillSelectionList(DCM_TAG tag, LST_HEAD** l) {
     }
 
     if (verbose){
-      printf("fillSel options = %x\n",options);
+      printf("fillSel options = %lx\n",options);
       printf(" %s\n", p->fileName);
     }
     cond = DCM_OpenFile(p->fileName, options, &obj);
@@ -1421,7 +1421,7 @@ selectImages(LST_HEAD** l, DCM_TAG tag, const char* text)
 	    options |= DCM_PART10FILE;
 	    options |= DCM_ACCEPTVRMISMATCH;
     }
-    if (verbose)printf("selectImages options = %x\n",options);
+    if (verbose)printf("selectImages options = %lx\n",options);
 
     cond = DCM_OpenFile(pOrig->fileName, options, &obj);
     if (cond != DCM_NORMAL) {
@@ -1481,7 +1481,12 @@ void setBase(LST_HEAD **l, char *out) {
   assert(s);			/* sequence name must be non-NULL */
   while (*s == '*') s++;	/* skip past any leading asterisks */
 
-  sprintf(out, "%01.5s_%d", s, p->seriesNumber);
+  sprintf(out, "%1.5s_%d", s, p->seriesNumber);
+  for (s = out; *s; s++) {
+    if (' ' == *s) {
+      *s = '0';
+    }
+  }
 }
 
 
@@ -1775,7 +1780,9 @@ MAIN(int argc, char **argv)
 		    rangeTag, lowerRange, upperRange,
 		    sliceThickness, &l);
 
-    if(verbose)printf("divisionTag = %d\n",divisionTag);
+    
+
+  - if(verbose)printf("divisionTag = %d\n",divisionTag);
 
     processMultipleViews(&l, divisionTag, sortOnInstanceNumber,
 			   xDirection, yDirection, zDirection,
