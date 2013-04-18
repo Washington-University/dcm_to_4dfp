@@ -2,9 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(dcm_to_4dfp,
-	[m4_esyscmd_s([git describe --always || echo 'RCS'])],
-	karchie@wustl.edu)
+AC_INIT(dcm_to_4dfp,1.0.2,karchie@wustl.edu)
 AC_CONFIG_SRCDIR([dcm_to_4dfp.c])
 AC_CONFIG_HEADER([config.h])
 
