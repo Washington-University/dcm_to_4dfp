@@ -1,8 +1,9 @@
-# Compilation products
+# Build products
 *.o
 dcm_to_4dfp
 test_dcm
 test_dcm_to_4dfp
+dcm_to_4dfp-*.tar.gz
 
 # Emacs backup files
 *~

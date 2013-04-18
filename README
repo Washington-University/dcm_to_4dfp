@@ -1,5 +1,4 @@
-April 2004  (see end of file for copyright information)
-
+(See end of file for copyright and license information.)
 
 This dicom to 4dfp conversion program is modified from the fine work
 of the Electronic Radiology Lab, Washington University School of
@@ -7,17 +6,17 @@ Medicine, and Stephen M. Moore. Please respect their copyright
 notices. At this time it should be used with caution. Further testing
 is needed. The basic program was a dicom to 16 bit analyze image
 conversion. Functions for producing 4dfp volume data have been
-added. A rec file and ifh file are written.
+added. A rec file and an ifh file are written.
 
-The algorithm uses linked lists. A list of filenames is created. Then
-files are opened and divided into analyze volumes using the series
-time (dicom tag 0008 0031). This decision may be overriden by the -d
-option. Each volume is first sorted by the relative image number (tag
-0020 0013). Orientation and a check for multivolume data is
-done. Default orientation is transverse. The volume is sorted again by
-image position (0020 0032) to verify compliance with the 4dfp-Analyze
-Coordinant System. If every image has the same position (bold), volume
-size is set to 1.
+The file sorting algorithm creates a list of filenames and sorts them
+into analyze volumes according to each file's Series Instance UID
+(0020 000e), though an alternate volume-identifying tag may be chosen
+with the -d option. The files within each volume are then sorted by
+the relative image number (tag 0020 0013). Orientation is extracted
+and a check for multivolume data is made. The volume is sorted once
+more by image position (0020 0032) to verify compliance with the
+4dfp-Analyze coordinate system. If every image has the same position
+(bold), volume size is set to 1.
 
 Distance between slices (dime.pixdim[3]) is determined
 preferentially. The default is to use the slice spacing tag 0018
@@ -39,7 +38,7 @@ Command Line Options:
 
 -b  Output base filename follows the -b. The default is - analyze - 
 -d  Divide series by the header tag given by the group and element number.
-    ** Default will divide volumes using ID series time (0008 0031).
+    ** Default is Series Instance UID 0020 000e
 -f  Directories will be created, and dicom files will be moved.
 -g  Add XYZ slice position, image name and number to rec file.
 
@@ -51,7 +50,7 @@ Command Line Options:
 
 -u  Output files named using sequence tag 0018 0024 plus number.
 
-Analyze Coordinant System is determined using Image Position (0020 0032).
+Analyze Coordinate System is determined using Image Position (0020 0032).
 Multivolume and BOLD images are ordered by REL Image Number (0020 0013).
 
 Reverse The Analyze Coordinate System Using Relative Image Position:
