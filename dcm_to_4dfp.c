@@ -1782,7 +1782,7 @@ MAIN(int argc, char **argv)
 
     
 
-  - if(verbose)printf("divisionTag = %d\n",divisionTag);
+   if(verbose)printf("divisionTag = %d\n",divisionTag);
 
     processMultipleViews(&l, divisionTag, sortOnInstanceNumber,
 			   xDirection, yDirection, zDirection,
