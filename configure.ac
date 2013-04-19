@@ -2,7 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(dcm_to_4dfp,1.0.2,karchie@wustl.edu)
+AC_INIT([dcm_to_4dfp],
+	m4_esyscmd([(git describe --always --tag || echo unknown )| tr -d 'v\n']),
+	[karchie@wustl.edu])
 AC_CONFIG_SRCDIR([dcm_to_4dfp.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -53,6 +55,10 @@ AC_SEARCH_LIBS(sqrt,m)
 
 # needed for unit tests created by 'make check'
 AC_SEARCH_LIBS([CU_basic_run_tests],[cunit])
+
+if test -d .git ; then
+AC_SUBST(GITPREREQ, ".git/HEAD .git/index")
+fi
 
 AC_CONFIG_FILES([Makefile include/Makefile])
 AC_OUTPUT

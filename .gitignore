@@ -4,6 +4,7 @@ dcm_to_4dfp
 test_dcm
 test_dcm_to_4dfp
 dcm_to_4dfp-*.tar.gz
+dcm_to_4dfp.tar.gz
 
 # Emacs backup files
 *~
@@ -25,6 +26,7 @@ include/Makefile.in
 install-sh
 missing
 stamp-h1
+gitversion.c
 
 # etags output
 TAGS

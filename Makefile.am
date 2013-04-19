@@ -6,13 +6,21 @@ AM_CPPFLAGS = -I@srcdir@/include -I@TRX@
 
 dcm_to_4dfp_SOURCES = dcm_to_4dfp.c config.h \
 	pixel_ops.c lst.c dcm.c condition.c utility.c \
-	ctnthread.c dcmsupport.c dcmdict.c dcmcond.c
+	ctnthread.c dcmsupport.c dcmdict.c dcmcond.c \
+	gitversion.c
+
+gitversion.c: @GITPREREQ@
+	echo "const char *gitrev = \""`git rev-parse HEAD`"\";" >$@
+	echo "const char *gittag = \""`git describe --always --tag`"\";" >>$@
 
 dcm_to_4dfp_LDADD = @TRX@/rec.o @TRX@/Getifh.o @TRX@/endianio.o
 
 dist-hook:
-	sh $(top_srcdir)/generate-changelog.sh $(top_srcdir) $(distdir)
+	@test -f $(top_srcdir)/generate-changelog.sh && sh $(top_srcdir)/generate-changelog.sh $(top_srcdir) $(distdir) || true
+	tar cvfz $(PACKAGE).tar.gz --transform "s!$(distdir)!$(PACKAGE)!" \
+		$(distdir)
 
+DISTCLEANFILES=$(PACKAGE).tar.gz
 
 TESTS = test_dcm_to_4dfp test_dcm
 check_PROGRAMS = test_dcm_to_4dfp test_dcm

@@ -22,7 +22,7 @@
 **   checkOrientation method and adapted for porting to Sparc on x86
 */
 
-static char gitid[] = "$Id$";
+extern const char *gittag, *gitrev;
 static char program[] = "dcm_to_4dfp";
 
 
@@ -88,15 +88,16 @@ static void
 usageerror()
 {
 
-printf ("%s\n", gitid);
-printf ("Usage:\tdcm_to_4dfp [-b base] [-d gggg eeee] [-f] [-g] [-u] file(s)\n");
-printf ("Slice Spacing Options: [-c] [-t <flt> or S or T]\n");
-printf ("Slice Position Options: [-X] [-Y] [-Z]\n");
+  printf ("%s %s (commit %s)\n", program, gittag, gitrev);
+  printf ("Usage:\t%s [-b base] [-d gggg eeee] [-f] [-g] [-u] file(s)\n",
+	  program);
+  printf ("Slice Spacing Options: [-c] [-t <flt> or S or T]\n");
+  printf ("Slice Position Options: [-X] [-Y] [-Z]\n");
 
-printf (" e.g.,\tdcm_to_4dfp *\n");
-printf ("   or,\tdcm_to_4dfp -b ID101 -f -g -u *IMA\n");
-printf ("   or,\tdcm_to_4dfp -d 0008 0030 -t 4.98 -g *.dcm\n");
-printf ("   or,\tdcm_to_4dfp -b P0089 -t T -g mydir/* \n");
+  printf (" e.g.,\t%s *\n", program);
+  printf ("   or,\t%s -b ID101 -f -g -u *IMA\n", program);
+  printf ("   or,\t%s -d 0008 0030 -t 4.98 -g *.dcm\n", program);
+  printf ("   or,\t%s -b P0089 -t T -g mydir/* \n", program);
 
 printf ("Options:\n");
 
@@ -1192,13 +1193,13 @@ writeREC(const char *base, LST_HEAD** l, const char* text,
 
   sprintf(fileName, "%s.%s.img", base, extension_4dfp);
   printf("Writing %s.rec\n",fileName);
-  startrecle (fileName, argc, argv, gitid, control);
+  startrecle (fileName, argc, argv, gittag, control);
   printrec (((CPU_is_bigendian ()) ? !(control == 'l' || control == 'L') : (control == 'b' || control == 'B')) ? "bigendian\n" : "littleendian\n");
 
   p = LST_Head(l);
   (void)LST_Position(l, p);
 
-  sprintf (command, "dcm_to_4dfp text:        \t%s\n",text);
+  sprintf(command, "%s text:        \t%s\n", program, text);
   printrec(command);
 
   if(orientation == 2) printrec("Orientation:             \tTransverse\n");
